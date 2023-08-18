@@ -5,8 +5,6 @@
 library(here)
 library(tidyverse)
 library(fitdistrplus)
-library(cowplot)
-library(gridExtra)
 source(here("R","dfe_functions.R"))
 
 #### Import data and compute statistics for fit ####

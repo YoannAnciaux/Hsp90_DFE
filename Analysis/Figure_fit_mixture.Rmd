@@ -3,20 +3,32 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-```{r}
+```{r include=FALSE}
 library(here)
 library(tidyverse)
-library(latex2exp)
+library(gridExtra)
+library(cowplot)
+```
+
+```{r Load data and fit results, include=FALSE}
+data_DFE <- read_delim(here("Data", "database_clusters_reduced.csv"), delim = ";",
+                       col_types = "_fffdddff",
+                       locale=locale(decimal_mark = ","))
+
+data_DFE <- data_DFE %>%
+  filter(AA != "WILDTYPE") %>% # remove the wildtype as we want ony mutants for the DFE
+  mutate(sd = abs(Upper_CI - Low_CI) / 4) #approximation of the standard deviation by the standard error.
+
+mgefit <- readRDS(here("Analysis", "mgefit_alldata_scaledlambda.rds"))
+envs <- names(mgefit)
+tbl_dfe <- sapply(envs, function(e) mgefit[[e]]$dfe, simplify = F, USE.NAMES = F) %>% bind_rows()
 ```
 
 
-```{r}
-mgefit <- readRDS(here("Analysis", "mgefit_alldata_scaledlambda.rds"))
-tbl_dfe <- sapply(envs, function(e) mgefit[[e]]$dfe, simplify = F, USE.NAMES = F) %>% bind_rows()
-
+```{r Graphic, echo=TRUE}
 # Graph DFEs
 p1 <- ggplot() +
-  geom_histogram(aes(x = s, y = ..density.., color = "1"), bins = 50, data = data_DFE) +
+  geom_histogram(aes(x = s, y = after_stat(density), color = "1"), bins = 50, data = data_DFE) +
   geom_line(aes(x = s, y = density, color = "2"), data = tbl_dfe) +
   facet_wrap(~Environment) +
   xlab("selection coefficients") +
