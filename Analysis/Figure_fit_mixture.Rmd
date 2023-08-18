@@ -1,0 +1,41 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(here)
+library(tidyverse)
+library(latex2exp)
+```
+
+
+```{r}
+mgefit <- readRDS(here("Analysis", "mgefit_alldata_scaledlambda.rds"))
+tbl_dfe <- sapply(envs, function(e) mgefit[[e]]$dfe, simplify = F, USE.NAMES = F) %>% bind_rows()
+
+# Graph DFEs
+p1 <- ggplot() +
+  geom_histogram(aes(x = s, y = ..density.., color = "1"), bins = 50, data = data_DFE) +
+  geom_line(aes(x = s, y = density, color = "2"), data = tbl_dfe) +
+  facet_wrap(~Environment) +
+  xlab("selection coefficients") +
+  scale_color_manual(name = NULL, breaks = c("1","2"), labels = c("Data", "Fit mixture"), values = c("#808080","#FF0000"))+
+  theme(legend.position = c(0.2, 0.85))
+
+# Table parameters
+t1 <- sapply(envs, function(e) mgefit[[e]]$fit$estimate, simplify = T, USE.NAMES = T) %>%
+  t() %>%
+  round(digits = 2) %>%
+  as.data.frame() %>%
+  tableGrob(cols = c("n", "so", "p"),
+            theme = ttheme_default(
+    base_size = 10,
+    colhead = list(fg_params=list(col="black"),
+                   bg_params=list(fill="grey")),
+    rowhead = list(fg_params=list(col="black", fontface="bold",hjust=0.5, x=0.5),
+                   bg_params=list(fill="grey"))))
+
+plot_grid(p1, t1, rel_widths = c(2.5, 1))
+```
+
